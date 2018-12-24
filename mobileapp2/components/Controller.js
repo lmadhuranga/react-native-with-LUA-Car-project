@@ -10,7 +10,8 @@ export default class Controller extends React.Component {
             server :'192.168.15.153',
             speed :'60',
             turning: true,
-            stop:true
+            stop:true,
+            forward:true
         };
     }
     
