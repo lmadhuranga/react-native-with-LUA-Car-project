@@ -2,40 +2,52 @@ import * as React from 'react';
 import { Text, View, StyleSheet, Button, TextInput } from 'react-native';
 import { Accelerometer } from 'expo';
  
+const tForward= 'forward';
+const tRight  = 'right';
+const tLeft   = 'left';
+const tStop   = 'stop';
+const tBack   = 'back';
+
 export default class Controller extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            title: "Init", accelerometerData: {},
-            server :'192.168.15.153',
-            speed :'60',
-            turning: true,
-            stop:true,
-            forward:true
-        };
-    }
+  constructor(props) {
+      super(props);
+      this.lastCommand = tStop;
+      this.state = {
+          title: "Init", accelerometerData: {},
+          server :'192.168.15.153',
+          speed :'60',
+          lastCommand:tStop,
+          currentState:tStop
+      };
+  }
     
-    go(direction="stop") {
-        this.setState({title: direction})
-        let url = `http://${this.state.server}`;
-        try {
-          const res = fetch(url, {
-                      method: 'POST',
-                      headers: {
-                        Accept: 'application/json',
-                        'Content-Type': 'multipart/form-data',
-                      },
-                      body:`goto=${direction}`,
-                    });
-          console.log('res',res);
-        } catch (error) {
-          console.log('error',error);
-        }
-        
+  go(direction=tStop) {
+    const { currentState, lastCommand } = this.state;
+    console.log(`direction`, direction);
+    if(this.lastCommand!=direction) {
+      this.lastCommand = direction;
+      this.setState({title: direction})
+      let url = `http://${this.state.server}`;
+      try {
+        const res = fetch(url, {
+                    method: 'POST',
+                    headers: {
+                      Accept: 'application/json',
+                      'Content-Type': 'multipart/form-data',
+                    },
+                    body:`goto=${direction}`,
+                  });
+      } catch (error) {
+        console.log('error',error);
+      }
     }
+    else {
+      console.log(`last -> ${lastCommand}:  currnt -> ${currentState}`);
+    }
+  }
 
     _timer = () => {
-      Accelerometer.setUpdateInterval(300); 
+      Accelerometer.setUpdateInterval(100); 
     }
 
     _subscribe = () => {
@@ -53,37 +65,51 @@ export default class Controller extends React.Component {
       return Math.floor(n * 100) / 100;
     }
 
+    _isTurning() {
+      return (this.lastCommand == tLeft) || (this.lastCommand == tRight);
+    }
+
+    _isForwarding() {
+      return (this.lastCommand==tForward)?tForward:tStop;
+    }
+
     doStop() {
-      if(this.state.stop) {
-        this.setState({stop:false});
-        this.go('back');
+      const { currentState } = this.state;
+      // if stop go back
+      if(currentState===tStop) {
+        this.setState({ currentState: tBack, lastCommand:tStop });
+        this.go(tBack)
       }
       else {
-        this.setState({stop:true});
-        this.go('stop');
+        this.setState({ currentState:tStop, lastCommand:tStop });
+        this.go(tStop)
       }
     }
-
-    notStop() {
-      this.setState({stop:false});
+    
+    forward() {
+      this.setState({currentState:tForward, lastCommand:tStop});
+      this.go(tForward)
     }
-
     leftOrRight(angle) {
       const turningValue = 30;
-      const { turning } = this.state;
       const tA  = this._round(angle) * 100;
-      if(!turning && (tA > turningValue)) {
-        this.setState({turning:true});
-        this.go('right');
-      } else if(!turning && (tA < -turningValue)) {
-        this.setState({turning:true});
-        this.go('left');
-      }else if(turning==true && ((tA < turningValue) && (tA > -turningValue))) {
-        this.setState({turning:false});
-        this.go('stop');
-        this.setState({stop:true});
+      // Check currently trunign right
+      if((this.lastCommand!=tRight) && (tA > turningValue)) { // positive right
+        this.setState({ currentState:tRight, lastCommand:this._isForwarding()});        
+        this.go(tRight);
       }
-
+      // Check current turn is not left
+      else if((this.lastCommand!=tLeft) && (tA < -turningValue)){                   // negative left
+        this.setState({ currentState:tLeft, lastCommand:this._isForwarding()});
+        this.go(tLeft);
+      }
+      else {
+        if((tA < turningValue) && (tA > -turningValue) && this._isTurning()) {
+          const nextCommand = this.state.lastCommand;
+          this.setState({ currentState:nextCommand, lastCommand:tStop});
+          this.go(nextCommand);
+        }
+      }
     }
    
     componentDidMount() {
@@ -92,14 +118,15 @@ export default class Controller extends React.Component {
     }
 
   render() {
-    let { x, y, z } = this.state.accelerometerData;
+    let { accelerometerData, currentState, lastCommand } = this.state;
+    let { x, y, z } = accelerometerData;
     
     return (
       <View >
         <View style={styles.container}>
           <View style={styles.controllsContainer} >
             <Text>
-              {this.state.title}
+              {currentState}
             </Text>
             <TextInput
               style={{height: 40, borderColor: 'gray', borderWidth: 1}}
@@ -124,7 +151,7 @@ export default class Controller extends React.Component {
             <Button
               style={styles.controllbtn}
               onPress={this.doStop.bind(this)}
-              title="Stop"
+              title={ currentState==tStop || this._isTurning() ?'Back': 'Stop' }
               color="#841584"
             />
           </View>
@@ -132,7 +159,7 @@ export default class Controller extends React.Component {
             <Text>Go</Text>
             <Button
               style={styles.controllbtn}
-              onPress={this.go.bind(this, 'forward')}
+              onPress={this.forward.bind(this)}
               title="Go"
               color="#841584"
             />
