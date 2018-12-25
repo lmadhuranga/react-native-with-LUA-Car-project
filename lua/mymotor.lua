@@ -8,11 +8,12 @@ pin_b_dir = 4
 FWD = gpio.HIGH
 REV = gpio.LOW
 duty = 1023
-HzVal = 1000
+hzVal = 1000
+
 --initiate motor A
 gpio.mode(pin_a_speed,gpio.OUTPUT)
 gpio.write(pin_a_speed,gpio.LOW)
-pwm.setup(pin_a_speed,HzVal,duty) --PWM 1KHz, Duty 1023
+pwm.setup(pin_a_speed,hzVal,duty) --PWM 1KHz, Duty 1023
 pwm.start(pin_a_speed)
 pwm.setduty(pin_a_speed,0)
 gpio.mode(pin_a_dir,gpio.OUTPUT)
@@ -20,10 +21,11 @@ gpio.mode(pin_a_dir,gpio.OUTPUT)
 --initiate motor B
 gpio.mode(pin_b_speed,gpio.OUTPUT)
 gpio.write(pin_b_speed,gpio.LOW)
-pwm.setup(pin_b_speed,HzVal,duty) --PWM 1KHz, Duty 1023
+pwm.setup(pin_b_speed,hzVal,duty) --PWM 1KHz, Duty 1023
 pwm.start(pin_b_speed)
 pwm.setduty(pin_b_speed,0)
 gpio.mode(pin_b_dir,gpio.OUTPUT)
+
 -- speed is 0 - 100
 function motor(pin_speed, pin_dir, dir, speed)
     gpio.write(pin_dir,dir)

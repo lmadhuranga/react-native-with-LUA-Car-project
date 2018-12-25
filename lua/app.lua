@@ -49,6 +49,11 @@ srv:listen(80,function(conn)
                 mymotor.motor_a(FWD, 0)
                 mymotor.motor_b(FWD, 0)
             end
+            if goto == "rotate" then
+                print("rotate")
+                mymotor.motor_a(REV, vspeed)
+                mymotor.motor_b(FWD, vspeed)
+            end
         end
 
         --parse position POST value from header
@@ -68,6 +73,7 @@ srv:listen(80,function(conn)
         conn:send('<input type="submit" name="goto" value="forward">\n')
         conn:send('<input type="submit" name="goto" value="back">\n')
         conn:send('<input type="submit" name="goto" value="stop">\n')
+        conn:send('<input type="submit" name="goto" value="rotate">\n')
         conn:send('</form>\n')
         conn:send('</body></html>\n')
         conn:on("sent", function(conn) conn:close() end)
