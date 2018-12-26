@@ -4544,6 +4544,11 @@ react-native-sensors@^5.1.5:
   dependencies:
     rxjs ">= 6"
 
+react-native-user-inactivity@^0.1.3-next:
+  version "0.1.3-next"
+  resolved "https://registry.yarnpkg.com/react-native-user-inactivity/-/react-native-user-inactivity-0.1.3-next.tgz#f396f7deb87a3b0e33bb2f8cf564b7ec95f376f2"
+  integrity sha512-xiSwYjYiAmIycjDRieIV9l0goj7OchsRQa3mxkrsB4XUCdUcwZ+TBoWfBZbm2i8AS9mHrU2JzKCg1CoLumTeiw==
+
 react-native@0.57.8:
   version "0.57.8"
   resolved "https://registry.yarnpkg.com/react-native/-/react-native-0.57.8.tgz#1a840fbe144cd3902cc14313a783ce28efc48cb9"

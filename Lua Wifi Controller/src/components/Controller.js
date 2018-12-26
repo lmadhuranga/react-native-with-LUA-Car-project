@@ -15,13 +15,14 @@ const tRight  = 'right';
 const tLeft   = 'left';
 const tStop   = 'stop';
 const tBack   = 'back';
-const tRotate   = 'rotate';
+const tRotate = 'rotate';
 const sInit   = sInit;
 
 export default class Controller extends React.Component {
   constructor(props) {
     super(props);
     this.lastCommand = tStop;
+    this.subscription = null;
     this.state = {
         title: "Init", 
         accelerometerData: {},
@@ -31,7 +32,7 @@ export default class Controller extends React.Component {
         currentState:tStop
     };
   }
-  
+
   // update the server and callBack trigger
   updateServer(direction=tStop, _callback=(()=>{})) {
     const { currentState, lastCommand, isOn } = this.state;
@@ -57,7 +58,6 @@ export default class Controller extends React.Component {
           });
       } catch (error) {
         _callback({error:error});
-        console.log('error',error);
       }
     }
     else {
@@ -92,6 +92,7 @@ export default class Controller extends React.Component {
       const accelerometerData = { x, y, z, timestamp }
       this.setState({accelerometerData:accelerometerData})
       this.leftOrRight(accelerometerData);
+      this._isItMoving(accelerometerData);
     });
   }
   _stopAccelerometor = () => {
@@ -128,6 +129,12 @@ export default class Controller extends React.Component {
   _isReady() {
     const { isOn } = this.state;
     return isOn==true?true:false;
+  }
+
+  _isItMoving(accelerometerData) {
+    console.log('accelerometerData',accelerometerData);
+    // yes or no
+    return true;
   }
 
   // Stop last moving direction and send next direction
@@ -192,21 +199,22 @@ export default class Controller extends React.Component {
       console.log('Already Forwarding');
     }
   }
+  
  
-  leftOrRight(accelerometerData) {
+  leftOrRight(accelerometerData) { 
     const turningValue = 30;
     const tmpCommand = this._isForwarding()?tForward:(this._isRevers()?tBack:tStop);
     const angle = accelerometerData.y
     const tA  = this._round(angle);
     // Check currently turning is not Right and value should be more than expect value
     if((this.lastCommand!=tRight) && (tA > turningValue)) { // positive right
-      const nextMove = tLeft;
+      const nextMove = tRight;
       this.setState({ currentState:nextMove, lastCommand:tmpCommand });
       this.go(nextMove); 
     }
     // Check currently turning is not left and value should be more than expect value
     else if((this.lastCommand!=tLeft) && (tA < -turningValue)){                   // negative left
-      const nextMove = tRight;
+      const nextMove = tLeft;
       this.setState({ currentState:nextMove, lastCommand:tmpCommand });
       this.go(nextMove); 
     }
@@ -272,7 +280,7 @@ export default class Controller extends React.Component {
               disabled={!this._isReady()}
               style={styles.controllbtn}
               onPress={this.doStop.bind(this)}
-              title={ currentState==tStop || this._isTurning() ?'Back': 'Stop' }
+              title={ currentState==tStop?'Back': 'Stop' }
               color="#841584"
             />
           </View>
