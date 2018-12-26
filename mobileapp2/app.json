@@ -1,6 +1,9 @@
 {
+  "name": "mobileapp2",
+    "displayName": "mobileapp2",
   "expo": {
     "name": "mobileapp2",
+    "displayName": "mobileapp2",
     "slug": "mobileapp2",
     "privacy": "public",
     "sdkVersion": "31.0.0",

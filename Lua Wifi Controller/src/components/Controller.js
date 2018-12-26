@@ -1,6 +1,14 @@
 import * as React from 'react';
-import { Text, View, StyleSheet, Button, TextInput } from 'react-native';
-import { Accelerometer } from 'expo';
+import { Text, View, StyleSheet, Button, TextInput, fuck } from 'react-native';
+import {
+  accelerometer,
+  gyroscope,
+  setUpdateIntervalForType,
+  SensorTypes
+} from "react-native-sensors";
+
+import { map, filter } from "rxjs/operators";
+
  
 const tForward= 'forward';
 const tRight  = 'right';
@@ -8,27 +16,30 @@ const tLeft   = 'left';
 const tStop   = 'stop';
 const tBack   = 'back';
 const tRotate   = 'rotate';
-const sInit   = 'init';
+const sInit   = sInit;
 
 export default class Controller extends React.Component {
   constructor(props) {
-      super(props);
-      this.lastCommand = tStop;
-      this.state = {
-          title: "Init", accelerometerData: {},
-          server :'192.168.15.153',
-          isOn:sInit,
-          lastCommand:tStop,
-          currentState:tStop
-      };
+    super(props);
+    this.lastCommand = tStop;
+    this.state = {
+        title: "Init", 
+        accelerometerData: {},
+        server :'192.168.15.153',
+        isOn:sInit,
+        lastCommand:tStop,
+        currentState:tStop
+    };
   }
   
   // update the server and callBack trigger
   updateServer(direction=tStop, _callback=(()=>{})) {
     const { currentState, lastCommand, isOn } = this.state;
-    console.log(`direction`, direction);
+    console.log(`direction ${direction} => isOn ${isOn}`);
     // Current Command not equal to last command
-    if(this.lastCommand!=direction) {
+    if((isOn==sInit) || (this.lastCommand!=direction)) {
+      // if initial send stop and trun off :)
+      if(isOn==sInit) { this.setState({isOn:false}); }
       // update the states
       this.lastCommand = direction;
       this.setState({title: direction})
@@ -74,18 +85,20 @@ export default class Controller extends React.Component {
     }
   }
 
-  // accelometer value geting interval set
-  _timer = () => {
-    Accelerometer.setUpdateInterval(100); 
-  }
-
   // get data from accelometor
-  _subscribe = () => {
-    this._subscription = Accelerometer.addListener(accelerometerData => {
-      // console.log('accelerometerData',accelerometerData);
-      this.setState({ accelerometerData });
-      this.leftOrRight(accelerometerData)
+  _startAccelerometor = () => {
+    setUpdateIntervalForType(SensorTypes.accelerometer, 100);
+    this.subscription = accelerometer.subscribe(({ x, y, z, timestamp }) => {
+      const accelerometerData = { x, y, z, timestamp }
+      this.setState({accelerometerData:accelerometerData})
+      this.leftOrRight(accelerometerData);
     });
+  }
+  _stopAccelerometor = () => {
+    setTimeout(() => {
+      // If it's the last subscription to accelerometer it will stop polling in the native API
+      this.subscription.unsubscribe();
+    }, 1000);
   }
 
   // Round the numbers
@@ -93,7 +106,7 @@ export default class Controller extends React.Component {
     if (!n) {
       return 0;
     }  
-    return Math.floor(n * 100);
+    return Math.floor(n * 10);
   }
 
   _isRevers() {
@@ -179,7 +192,7 @@ export default class Controller extends React.Component {
       console.log('Already Forwarding');
     }
   }
-
+ 
   leftOrRight(accelerometerData) {
     const turningValue = 30;
     const tmpCommand = this._isForwarding()?tForward:(this._isRevers()?tBack:tStop);
@@ -187,13 +200,15 @@ export default class Controller extends React.Component {
     const tA  = this._round(angle);
     // Check currently turning is not Right and value should be more than expect value
     if((this.lastCommand!=tRight) && (tA > turningValue)) { // positive right
-      this.setState({ currentState:tRight, lastCommand:tmpCommand });        
-      this.go(tRight);
+      const nextMove = tLeft;
+      this.setState({ currentState:nextMove, lastCommand:tmpCommand });
+      this.go(nextMove); 
     }
     // Check currently turning is not left and value should be more than expect value
     else if((this.lastCommand!=tLeft) && (tA < -turningValue)){                   // negative left
-      this.setState({ currentState:tLeft, lastCommand:tmpCommand });
-      this.go(tLeft);
+      const nextMove = tRight;
+      this.setState({ currentState:nextMove, lastCommand:tmpCommand });
+      this.go(nextMove); 
     }
     else {
       if((tA < turningValue) && (tA > -turningValue) && this._isTurning()) {
@@ -206,8 +221,7 @@ export default class Controller extends React.Component {
   
   componentDidMount() {
     this.go();
-    this._timer();
-    this._subscribe();
+    this._startAccelerometor();
   }
 
   render() {
