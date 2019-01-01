@@ -1,5 +1,6 @@
-# React-native LUA Car-project for Nodemcu esp8266
-Simple Mobile and **Nodemcu** related project,
+# React-Native LUA Nodemcu esp8266 Remote Controlled (wifi) Project
+
+Simple React Native and LUA programming with connect to my home wifi and Create HTTP server in NodeMCU board and control using mobile phone { react native app }
 
 - **Nodemcu (esp8266)** is able to handle the electronic items through internet (**IOT**)
 - **[Lua]**  is the Nodemcu (esp8266) programing language 
